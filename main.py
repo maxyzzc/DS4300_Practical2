@@ -148,7 +148,7 @@ def main():
     overlap = 50
 
     # Read and preprocess the text
-    text = read_and_preprocess("document_1.txt")
+    text = read_and_preprocess("data/document_1.txt")
 
     # Split text into chunks and embedd
     chunks = chunk_text(text, chunk_size=chunk_size, overlap=overlap)
