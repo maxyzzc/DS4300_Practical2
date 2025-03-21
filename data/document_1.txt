@@ -1,0 +1,969 @@
+ Module 2: Foundations
+Searching in Databases
+Searching is one of the most common operations performed by a Database Management System (DBMS), particularly through Structured Query Language (SQL) using the SELECT statement. The efficiency of search operations greatly impacts the performance of a database.
+The baseline for measuring search efficiency is linear search, which operates by starting at the first element and moving through each element sequentially until the desired record is found. The worst-case scenario occurs when the target element is the last in the dataset or does not exist at all, requiring a full traversal of the records.
+Basic Data Structures in Databases
+1. Record: A record is a collection of values that represent attributes of a single entity instance. In a relational database, this is equivalent to a row in a table.
+
+2. Collection: A collection refers to a set of records that belong to the same entity type. In relational databases, this corresponds to an entire table containing multiple rows (records).
+
+3. Search Key: The search key is a value associated with an attribute of an entity type that can be used to identify or locate records within the database. A table can have one or more search keys, some of which may be designated as primary keys, ensuring uniqueness across records.
+
+Storage Structures for Records
+   * When storing records in memory, there are two common data structures used:
+Contiguously Allocated List (Array-based Storage)
+   * The memory required to store a list of n records, each of size x bytes, is n * x bytes.
+   * All n * x bytes are allocated in a single, contiguous block of memory, similar to an array.
+   * This structure allows for fast random access, as accessing a specific record requires a simple calculation based on index position.
+   * However, inserting a record at any position other than the end is inefficient, because all subsequent records must be shifted to maintain the order, which increases insertion time complexity.
+Records Linked by Memory Addresses (Linked List-based Storage)
+   * Each record requires x bytes of memory for its data, plus additional space to store one or more memory addresses pointing to the next record in the sequence.
+   * Instead of a contiguous memory allocation, individual records are dynamically linked together using pointers.
+   * This structure enables efficient insertion and deletion operations anywhere within the list, as modifying the chain only requires updating a few pointers rather than shifting entire sections of data.
+   * However, random access is slower because traversal requires sequentially following pointers from one record to the next.
+Types of Search Algorithms
+Binary Search
+   * Input: A sorted array of values and a target value to find.
+   * Output: The index (location) of the target value in the array, or an indicator that the target does not exist.
+   * Process:
+   * Start by examining the middle value of the array.
+   * If the target value is equal to the middle value, the search is complete.
+   * If the target value is smaller than the middle value, reduce the search space to the left half of the array.
+   * If the target value is larger than the middle value, reduce the search space to the right half of the array.
+   * Repeat this process until the target is found or the search space is empty.
+   * Best Case: The target is found immediately at the midpoint, requiring only one comparison.
+   * Worst Case: The target is not in the array, requiring up to log2(n) comparisons.
+   * Time Complexity: O(log2(n)), making it significantly more efficient than linear search for large datasets.
+Linear Search
+   * Baseline algorithm for efficiency comparison
+   * Input: A list of values and a target value to find.
+   * Output: The index (location) of the target value if found, or an indication that the target is not in the list.
+   * Process:
+   * Start at the first element and compare it with the target.
+   * If it matches, the search is complete.
+   * If not, move to the next element and repeat until either the target is found or the end of the list is reached.
+   * Best Case: The target is found at the first element, requiring only one comparison.
+   * Worst Case: The target is the last element in the list, or it is not in the list at all, requiring n comparisons.
+   * Time Complexity: O(n), meaning the runtime grows linearly with the number of records.
+Binary search is a far more efficient algorithm than linear search when working with sorted data, as it drastically reduces the number of comparisons required to find an element. However, binary search requires a sorted dataset, whereas linear search works on any dataset, sorted or not.
+Module 3 - Moving Beyond the Relational Model
+The Relational Model: The relational model is the foundation of most modern database systems. It structures data into tables (relations) consisting of rows (records/tuples) and columns (attributes).
+Benefits of the Relational Model
+The relational model has been widely adopted due to its several advantages:
+   1. (Mostly) Standard Data Model and Query Language
+   * The relational model is standardized, with SQL (Structured Query Language) being the primary query language used to interact with relational databases.
+   * This standardization allows interoperability between different database systems that follow SQL conventions.
+   2. ACID Compliance
+   * Ensures that database transactions maintain data integrity, consistency, and reliability (discussed in detail below).
+   3. Handles Highly Structured Data
+
+      * Best suited for applications where data fits into well-defined schemas with predefined relationships between tables.
+      * Ideal for financial systems, inventory management, customer databases, etc.
+      4. Scalability for Large Data Volumes
+
+         * With indexing, query optimization, and distributed architectures, relational databases can efficiently manage large amounts of structured data.
+Techniques for Increasing Efficiency in Relational Systems 
+To improve performance, relational databases implement several optimization strategies:
+         1. Indexing
+         * Indexes create a faster lookup mechanism by organizing records based on key values.
+         * Instead of scanning an entire table, an index allows the database to quickly locate rows matching a search condition.
+         2. Directly Controlling Storage
+         * Databases can allocate and manage memory efficiently to optimize data retrieval and updates.
+         3. Column-Oriented vs. Row-Oriented Storage
+         * Row-Oriented Storage: Stores all attributes of a record together in a row. Optimized for transactional workloads (OLTP) where multiple attributes of a single record are accessed.
+         * Column-Oriented Storage: Stores each column separately. Optimized for analytical workloads (OLAP) where queries aggregate large amounts of data across a single column.
+         4. Query Optimization
+         * Query execution plans are optimized by the database engine to reduce computational overhead.
+         * Techniques include index selection, join reordering, and predicate pushdown.
+         5. Caching and Prefetching
+         * Frequently accessed data is stored in memory for quicker retrieval.
+         * Prefetching anticipates upcoming queries and loads data into cache proactively.
+         6. Materialized Views
+         * A materialized view is a precomputed table storing results of expensive queries.
+         * Instead of recalculating results on every query, the system retrieves the precomputed results, greatly improving performance.
+         7. Pre-Compiled Stored Procedures
+         * Stored procedures allow common queries and business logic to be precompiled and stored in the database.
+         * This reduces the need for repeated parsing and execution planning.
+         8. Data Replication and Partitioning
+         * Replication: Copies data across multiple servers for high availability and redundancy.
+         * Partitioning: Splits large tables into smaller segments for parallel processing and faster queries.
+________________
+
+
+Transaction Processing: A transaction is a sequence of one or more database operations (CRUD: Create, Read, Update, Delete) performed as a single unit of work.
+         * Transactions must either fully succeed or fully fail to maintain data consistency.
+         * If all operations are successful, the transaction commits (permanent changes).
+         * If any operation fails, the transaction rolls back (undoes all changes).
+Benefits of Transactions
+         * Data Integrity: Ensures data remains accurate even in concurrent environments.
+         * Error Recovery: Prevents partial updates that could lead to data corruption.
+         * Concurrency Control: Allows multiple users to access data without conflicts.
+         * Simplified Error Handling: Provides a structured way to deal with failures.
+________________
+
+
+ACID Compliance: Relational databases adhere to ACID properties to ensure reliable transactions:
+         1. Atomicity
+         * Transactions are treated as atomic units, meaning either all operations execute successfully, or none execute at all.
+         * If a failure occurs at any point, all changes are rolled back to maintain data consistency.
+         2. Consistency
+         * The database must remain in a valid state before and after a transaction.
+         * A transaction must not violate integrity constraints (e.g., foreign key constraints, unique constraints).
+         3. Isolation
+         * Ensures concurrent transactions do not interfere with each other.
+         * A transaction should be unaffected by other ongoing transactions.
+         * Problems that can arise due to improper isolation:
+         * Dirty Read
+         * Occurs when a transaction reads data that has been modified by another transaction that has not yet committed.
+         * If the modifying transaction rollback, the read data becomes invalid.
+         * Non-Repeatable Read
+         * Happens when a transaction executes a SELECT query multiple times within its scope but gets different results each time.
+         * This occurs if another transaction modifies the data and commits in between the two reads.
+         * Phantom Read
+         * Occurs when a transaction retrieves a set of rows but another transaction inserts or deletes rows affecting the same result set.
+         * Example: A transaction reads all rows where price > 100. While it runs, another transaction adds a new row with price = 150, affecting the result set.
+         4. Durability
+         * Once a transaction commits, its changes are permanent and will survive system failures (power outages, crashes).
+         * Databases achieve durability through write-ahead logging (WAL), where changes are recorded in a log file before being applied to the main database.
+Here’s the expanded and formatted version of your notes with additional information on NoSQL databases and Redis, structured for easy ingestion by an LLM:
+________________
+
+
+Module 4 - NoSQL and Non-Relational Databases
+Introduction to NoSQL Databases
+Traditional relational databases are well-suited for structured data and transactional consistency, but they have limitations when dealing with high-velocity, high-volume, and semi-structured or unstructured data. This is where NoSQL databases come into play.
+The term NoSQL (Not Only SQL) refers to a broad class of database systems that move beyond the traditional relational model, providing scalability, flexibility, and performance optimizations for modern applications.
+Key Characteristics of NoSQL Databases
+         1. Schema Flexibility
+         * Unlike relational databases, NoSQL databases do not require a predefined schema.
+         * Data can be stored in varied formats such as key-value pairs, documents, wide-columns, or graphs.
+         * Ideal for applications where data structures evolve over time.
+         2. Scalability and Performance
+         * NoSQL databases are often horizontally scalable, meaning they distribute data across multiple servers, making them well-suited for large-scale applications.
+         * Designed for low-latency read and write operations, enabling real-time processing for high-traffic applications.
+         3. Relaxed Consistency
+         * Many NoSQL databases relax the strict consistency guarantees of relational databases (ACID) in favor of the CAP theorem trade-offs.
+         * The CAP theorem states that a distributed database can only guarantee two of the following three properties at the same time:
+         * Consistency: Every node sees the same data at the same time.
+         * Availability: Every request receives a response.
+         * Partition Tolerance: The system remains operational despite network failures.
+         4. Optimized for Specific Use Cases
+         * NoSQL databases are categorized based on how they store and retrieve data. The four primary types are:
+         * Key-Value Stores (e.g., Redis, DynamoDB) - Simple, highly efficient, fast lookups.
+         * Document Stores (e.g., MongoDB, CouchDB) - Stores data as JSON-like documents, allowing flexible schemas.
+         * Column-Family Stores (e.g., Apache Cassandra, HBase) - Optimized for reading/writing large-scale datasets.
+         * Graph Databases (e.g., Neo4j, ArangoDB) - Designed for highly interconnected data with complex relationships.
+Comparison: Relational vs. NoSQL Databases
+         * Relational Databases enforce a strict schema, making them suitable for applications requiring strong consistency and structured data (e.g., financial transactions, inventory systems).
+         * NoSQL Databases offer flexibility and performance optimizations, making them ideal for big data applications, distributed systems, and real-time analytics.
+________________
+
+
+Introduction to Redis - An In-Memory NoSQL Database
+Redis (Remote Dictionary Server) is a high-performance, in-memory key-value store commonly used for caching, real-time analytics, and message brokering. Unlike traditional databases that store data on disk, Redis keeps data in RAM, making it extremely fast.
+Key Features of Redis
+         1. In-Memory Storage
+         * Data is stored entirely in RAM, enabling sub-millisecond response times.
+         * Ideal for use cases like caching frequently accessed data, leaderboard rankings, and session management.
+         2. Persistence Options
+         * Though primarily in-memory, Redis provides mechanisms to persist data to disk using RDB (Redis Database Backup) snapshots and AOF (Append-Only File) logs.
+         * RDB periodically saves a snapshot of the dataset, while AOF logs every write operation for durability.
+         3. Data Structures
+         * Redis is not limited to simple key-value pairs; it supports various advanced data structures, including:
+         * Strings - Basic key-value pairs.
+         * Lists - Ordered sequences of elements.
+         * Sets - Unordered collections of unique elements.
+         * Sorted Sets - Sets with score-based ranking.
+         * Hashes - Key-value pairs within a key (nested storage).
+         * Bitmaps & HyperLogLogs - Specialized data types for efficient counting and memory-saving operations.
+         4. High Availability & Scalability
+         * Supports replication (master-slave architecture) and clustering for distributed storage across multiple nodes.
+         * Automatic failover mechanisms ensure system reliability.
+         5. Atomic Operations
+         * Redis commands are atomic, meaning a command either fully completes or fails without partial updates.
+Common Redis Commands and Their Usage
+Basic Key-Value Operations
+         * SET key value → Stores a value under a key.
+         * Example: SET user:1001 "John Doe"
+         * GET key → Retrieves the value of a key.
+         * Example: GET user:1001 → Returns "John Doe".
+         * DEL key → Deletes a key and its value.
+         * Example: DEL user:1001
+         * EXPIRE key seconds → Sets a time-to-live (TTL) for a key.
+         * Example: EXPIRE session:abc123 60 (expires in 60 seconds).
+Working with Lists
+         * LPUSH list_name value → Adds a value to the left of a list.
+         * Example: LPUSH queue "task1"
+         * RPUSH list_name value → Adds a value to the right of a list.
+         * Example: RPUSH queue "task2"
+         * LPOP list_name → Removes and returns the first element of the list.
+         * Example: LPOP queue → Returns "task1".
+         * RPOP list_name → Removes and returns the last element of the list.
+         * Example: RPOP queue → Returns "task2".
+Working with Sets
+         * SADD set_name value → Adds a value to a set.
+         * Example: SADD online_users "user123"
+         * SMEMBERS set_name → Retrieves all members of a set.
+         * Example: SMEMBERS online_users
+         * SREM set_name value → Removes a value from a set.
+         * Example: SREM online_users "user123"
+Sorted Sets (Leaderboards, Rankings)
+         * ZADD sorted_set score value → Adds a value with an associated score.
+         * Example: ZADD leaderboard 100 "player1"
+         * ZRANGE sorted_set start stop → Retrieves elements within a range.
+         * Example: ZRANGE leaderboard 0 -1 WITHSCORES (returns all players and scores).
+         * ZREVRANGE sorted_set start stop → Retrieves elements in reverse order.
+         * Example: ZREVRANGE leaderboard 0 4 WITHSCORES (top 5 players).
+Data Persistence Commands
+         * SAVE → Performs a manual snapshot of the dataset (RDB persistence).
+         * BGSAVE → Triggers an asynchronous background save operation.
+         * FLUSHDB → Deletes all keys in the current database.
+         * FLUSHALL → Deletes all keys across all databases.
+NoSQL databases like Redis provide speed, scalability, and flexibility, making them ideal for real-time applications. While relational databases remain a strong choice for structured, transactional workloads, NoSQL solutions excel in distributed architectures, caching, and high-performance read/write operations.
+Redis, as a lightweight, high-speed key-value store, is commonly used for session management, real-time leaderboards, caching, and message brokering. Understanding its commands and capabilities enables developers to optimize performance and ensure data availability in modern applications.
+Here’s the expanded and formatted version of your notes with additional context, a section on query operations, and guidance on structuring query pipelines in MongoDB:
+________________
+
+
+Module 07: Document Databases and MongoDB
+Introduction to Document Databases
+A document database is a type of NoSQL database that stores data as structured documents, typically using JSON (JavaScript Object Notation) or BSON (Binary JSON) formats. Unlike relational databases that require predefined schemas, document databases allow for flexible data structures that adapt as application needs evolve.
+Document databases are designed to be:
+         * Simple: They use familiar data structures such as JSON-like documents.
+         * Flexible: Different documents in a collection can have varying fields and structures.
+         * Scalable: They support horizontal scaling, making them ideal for large-scale applications.
+JSON (JavaScript Object Notation) in Document Databases
+JSON is a lightweight, text-based format used for data interchange between applications and databases. It is widely supported due to its simplicity and human readability.
+Key Characteristics of JSON:
+         * Lightweight: Minimal syntax and overhead.
+         * Human-readable: Easy to read and write manually.
+         * Machine-friendly: Easy to parse and generate programmatically.
+         * Universal: Compatible with most modern programming languages.
+JSON is based on two primary data structures:
+         1. Name/value pairs: Implemented as objects, dictionaries, associative arrays, or key-value stores in various programming languages.
+         2. Ordered lists: Implemented as arrays, vectors, lists, or sequences in most languages.
+Because of these structures, JSON is highly adaptable for document storage, API communication, and data exchange.
+________________
+
+
+BSON (Binary JSON) in MongoDB
+MongoDB uses BSON (Binary JSON) as its underlying storage format. BSON extends JSON with additional data types and optimizations for efficient storage and traversal.
+Key Characteristics of BSON:
+         * Lightweight: Keeps storage overhead minimal while supporting complex data types.
+         * Traversable: Designed for efficient document traversal, enabling faster queries.
+         * Efficient: Optimized for encoding/decoding operations.
+BSON supports additional types such as Date, Decimal128, and ObjectId, making it more suitable for database applications than standard JSON.
+________________
+
+
+XML (Extensible Markup Language) and Its Role in Data Exchange
+Before JSON became the dominant format for web applications, XML (Extensible Markup Language) was widely used for data interchange. XML provides structured, hierarchical data representation but is more verbose than JSON.
+Key Features of XML:
+         * Extensible: Allows developers to define custom tags and structures.
+         * Structured: Similar to HTML but with user-defined tags.
+         * Transport-agnostic: Used in web services, configuration files, and document storage.
+XML-Related Tools and Technologies:
+         * XPath: A syntax for selecting specific elements from an XML document.
+         * XQuery: A query language for retrieving and manipulating XML data (similar to SQL).
+         * DTD (Document Type Definition): Defines the structure of XML documents.
+         * XSLT (Extensible Stylesheet Language Transformations): Transforms XML into different formats (e.g., converting XML to HTML).
+While XML is still used in enterprise applications, JSON has largely replaced it for modern web APIs and document storage due to its simplicity and efficiency.
+________________
+
+
+Why Use Document Databases?
+Document databases solve the impedance mismatch problem between relational databases and object-oriented programming by allowing objects to be stored directly as documents without complex object-relational mapping (ORM).
+In object-oriented programming, data structures rely on inheritance and composition, whereas relational databases require strictly defined tables and joins. Document databases provide a more natural mapping between object-oriented applications and database storage.
+Other advantages of document databases include:
+         * Schema flexibility: No predefined schema required.
+         * Self-describing structure: Each document contains its own field definitions.
+         * Better alignment with modern applications: Many web and mobile apps use JSON/XML as a transport format, making document databases a seamless backend choice.
+________________
+
+
+MongoDB: A Leading Document Database
+MongoDB is one of the most widely used document-oriented NoSQL databases, known for its scalability, flexibility, and powerful querying capabilities.
+Key Features of MongoDB:
+         * Schema-less design: No predefined schema required; documents in a collection can have different structures.
+         * Rich query support: Supports advanced queries on documents, including filtering, aggregation, and indexing.
+         * Indexing: Supports primary and secondary indices on document fields for efficient queries.
+         * Replication and high availability: Supports replica sets with automatic failover.
+         * Load balancing: Built-in sharding enables horizontal scaling across multiple servers.
+In MongoDB, data is stored as documents within collections, similar to rows in relational databases but without rigid schema constraints.
+Example of a MongoDB document:
+{
+  "_id": ObjectId("507f1f77bcf86cd799439011"),
+  "name": "John Doe",
+  "email": "johndoe@example.com",
+  "age": 30,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "zip": "10001"
+  }
+}
+
+
+Each document in a collection can have a different structure, allowing flexibility in data modeling.
+________________
+
+
+Basic Query Operations in MongoDB
+MongoDB provides a powerful query language similar to SQL but tailored for document-based storage.
+         1. Finding Documents
+
+            * Retrieve all documents in a collection: db.users.find({})
+            * Find a user by email: db.users.find({ email: "johndoe@example.com" })
+            * Use projection to return only specific fields: db.users.find({ email: "johndoe@example.com" }, { name: 1, email: 1, _id: 0 })
+            2. Inserting Documents
+            * Insert a single document: db.users.insertOne({ name: "Alice", email: "alice@example.com", age: 28 })
+            * Insert multiple documents:
+            * db.users.insertMany([
+  { name: "Bob", age: 35 },
+  { name: "Charlie", email: "charlie@example.com" }
+])
+            3. Updating Documents
+Update a single document:
+db.users.updateOne({ name: "Alice" }, { $set: { age: 29 } })
+Update multiple documents:
+db.users.updateMany({}, { $inc: { age: 1 } })
+            4. Deleting Documents
+Delete a single document:
+db.users.deleteOne({ name: "Bob" })
+Delete multiple documents:
+db.users.deleteMany({ age: { $gte: 40 } })
+________________
+
+
+Building a Query Pipeline for Complex Operations
+MongoDB’s Aggregation Framework allows for powerful data transformation and analysis through pipelines. A pipeline consists of multiple stages, each performing a transformation on the dataset.
+Example:
+            1. Match Stage: Filter documents based on conditions.
+            2. Group Stage: Group documents and perform aggregations.
+            3. Sort Stage: Sort results by a specific field.
+Example query: Find the average age of users by city and sort the results in descending order.
+db.users.aggregate([
+  { $match: { age: { $gte: 18 } } },
+  { $group: { _id: "$address.city", avgAge: { $avg: "$age" } } },
+  { $sort: { avgAge: -1 } }
+])
+This pipeline:
+            * Filters out users under 18.
+            * Groups users by city and calculates the average age.
+            * Sorts cities by descending average age.
+MongoDB’s aggregation framework is highly efficient for data analytics, reporting, and transformations, making it a powerful tool for complex queries.
+Module 09: Introduction to the Graph Data Model
+Graph Databases: An Overview
+A graph database is a type of NoSQL database that models data using a graph structure, consisting of nodes (entities) and edges (relationships). Unlike traditional relational databases that rely on tables and joins, graph databases store relationships natively alongside data, making them highly efficient for complex relationship-based queries.
+Graph databases are ideal for applications such as social networks, fraud detection, recommendation systems, and network analysis, where the connections between data points are as important as the data itself.
+Core Components of Graph Databases
+            1. Nodes
+            * Represent entities, objects, or items in a graph database.
+            * Each node is uniquely identified and can contain multiple properties (key-value pairs).
+            * Example properties: name, age, occupation, location.
+            2. Edges (Relationships)
+            * Represent connections between nodes.
+            * Each edge has a start node and an end node.
+            * Can also store properties describing the relationship, such as timestamp, weight, or type.
+            * Example: In a social network, an edge might represent a "friend" or "follows" relationship.
+            3. Properties
+            * Attributes associated with nodes or edges.
+            * Provide additional context for queries and analysis.
+            4. Graph Queries
+            * Graph databases support graph-oriented query operations that traverse nodes and edges efficiently.
+            * Example operations include shortest path calculations, pattern matching, and centrality analysis.
+________________
+
+
+Types of Graphs and Their Features
+Graph databases implement various graph models depending on the structure and relationships they need to represent.
+Labeled Property Graph Model
+            * Composed of nodes (vertices) and relationships (edges).
+            * Labels categorize nodes into groups (e.g., User, Product, Transaction).
+            * Properties can be assigned to both nodes and relationships.
+            * Nodes do not need relationships, but edges must always connect two nodes.
+            * Supports flexible schemas, allowing dynamic data modeling.
+Common Flavors of Graphs
+            1. Connected vs. Disconnected Graphs
+            * Connected Graph: A path exists between every pair of nodes.
+            * Disconnected Graph: Some nodes are isolated, with no path connecting them to others.
+            2. Weighted vs. Unweighted Graphs
+            * Weighted Graph: Edges have an associated numerical value (weight), often used for cost, distance, or importance calculations.
+            * Unweighted Graph: Edges have no weights, and paths are evaluated based on the number of edges rather than edge values.
+            3. Directed vs. Undirected Graphs
+            * Directed Graph: Edges have a specific direction, meaning relationships flow one way (e.g., "follows" in a social network).
+            * Undirected Graph: Edges have no direction, meaning connections are bidirectional (e.g., "friends" in a social network).
+            4. Acyclic vs. Cyclic Graphs
+            * Acyclic Graph: Contains no cycles (no path leads back to the same node).
+            * Cyclic Graph: Contains at least one cycle, where a sequence of edges allows traversal back to a node.
+________________
+
+
+Types of Graph Algorithms
+Graph algorithms allow efficient analysis of relationships, connections, and structures in graph databases.
+1. Pathfinding Algorithms
+            * Focus on finding paths between nodes.
+            * Used in navigation systems, logistics, fraud detection, and recommendation engines.
+            * Key pathfinding algorithms:
+            * Shortest Path: Finds the most efficient route between two nodes, using either fewest edges (unweighted graphs) or lowest weight (weighted graphs).
+            * Average Shortest Path: Measures the efficiency and resilience of a network.
+            * Minimum Spanning Tree (MST): Connects all nodes in a graph with the minimum total edge weight.
+            * Cycle Detection: Identifies cycles within graphs.
+            * Max/Min Flow: Determines the maximum flow possible through a network.
+2. Centrality Algorithms
+            * Measure the importance of nodes in a graph based on their connections.
+            * Key centrality measures:
+            * Degree Centrality: Number of connections a node has (high-degree nodes are highly connected).
+            * Closeness Centrality: How quickly a node can reach all other nodes (lower distances indicate higher closeness).
+            * PageRank: Assigns importance to nodes based on incoming links (originally used by Google’s search algorithm).
+            * Betweenness Centrality: Identifies nodes that act as bridges between groups, controlling the flow of information.
+3. Community Detection Algorithms
+            * Used for clustering and partitioning nodes into groups.
+            * Helps identify communities, network resilience, and fraud detection patterns.
+            * Measures how strongly connected groups of nodes are within a graph.
+________________
+
+
+Paths in Graphs
+A path is an ordered sequence of nodes connected by edges, where no node or edge is repeated.
+Paths play a crucial role in search algorithms, routing systems, and network analysis.
+Example:
+If a user is connected to a product via multiple friends who purchased it, a shortest path algorithm can help identify the most relevant recommendations.
+________________
+
+
+Neo4J: A Leading Graph Database
+Neo4J is a widely used graph database management system that supports both transactional and analytical processing of graph data.
+Key Features of Neo4J
+            1. Schema-Optional Design
+            * Supports schema flexibility, allowing both structured and semi-structured data storage.
+            * Nodes and relationships can have different properties, and new attributes can be added dynamically.
+            2. ACID Compliance
+            * Ensures Atomicity, Consistency, Isolation, and Durability, making it reliable for transactional operations.
+            3. Native Graph Storage and Processing
+            * Optimized for graph-based queries, outperforming relational databases for relationship-heavy datasets.
+            4. Cypher Query Language (CQL)
+            * Neo4J uses Cypher, a declarative language optimized for querying and manipulating graph data.
+            * This query finds all friends of Alice and returns their names.
+            5. Graph-Based Indexing and Search
+            * Efficiently retrieves connected nodes and relationships without costly joins.
+            * Ideal for real-time recommendations, fraud detection, and social network analysis.
+            6. Scalability & High Availability
+            * Supports horizontal scaling using sharding and clustering.
+            * Allows distributed graph processing for large-scale datasets.
+________________
+
+
+Graph databases provide an intuitive, efficient way to store and query relationship-driven data. Unlike relational databases that struggle with complex joins, graph databases natively store connections, making queries faster and more efficient.
+Key takeaways:
+            * Graph databases use nodes, edges, and properties to model data.
+            * They support various graph structures, including directed, weighted, and acyclic graphs.
+            * Graph algorithms allow pathfinding, centrality analysis, and community detection.
+            * Neo4J is a leading graph database with schema-optional flexibility, ACID compliance, and powerful graph queries using Cypher.
+Graph databases are increasingly used in social networks, fraud detection, recommendation engines, and network analysis, making them an essential tool for modern data applications.
+MongoDB Documentation
+MongoDB Query Language (MQL) Documentation
+1. MongoDB MQL Basic Commands
+Show database: show dbs
+Use a database: use database_name
+Show collections: show collections
+Drop a database db.dropDatabase()
+
+
+2. MongoDB MQL CRUD Operations
+Create (Insert Documents)
+Insert one document
+ db.collection_name.insertOne({ key: value })
+Insert multiple documents
+ db.collection_name.insertMany([{ key1: value1 }, { key2: value2 }])
+Read (Find Documents)
+Find all documents
+ db.collection_name.find()
+
+
+Find one document
+ db.collection_name.findOne({ key: value })
+Find documents with condition
+ db.collection_name.find({ key: value })
+Find with projection (only return specific fields)
+ db.collection_name.find({ key: value }, { field1: 1, field2: 1 })
+Find with sorting
+ db.collection_name.find().sort({ field: 1 })  // 1 = Ascending, -1 = Descending
+Find with limit
+ db.collection_name.find().limit(5)
+Find with skip
+ db.collection_name.find().skip(5)
+
+
+Update (Modify Documents)
+Update one document
+ db.collection_name.updateOne({ key: value }, { $set: { field: new_value } })
+Update multiple documents
+ db.collection_name.updateMany({ key: value }, { $set: { field: new_value } })
+Replace a document
+ db.collection_name.replaceOne({ key: value }, { new_document })
+Delete (Remove Documents)
+Delete one document
+ db.collection_name.deleteOne({ key: value })
+Delete multiple documents
+ db.collection_name.deleteMany({ key: value })
+________________
+
+
+3. Query Operators
+Comparison Operators
+$eq – Equal to
+db.collection_name.find({ key: { $eq: value } })
+$ne – Not equal to
+db.collection_name.find({ key: { $ne: value } })
+$gt – Greater than
+db.collection_name.find({ key: { $gt: value } })
+$gte – Greater than or equal to
+db.collection_name.find({ key: { $gte: value } })
+$lt – Less than
+db.collection_name.find({ key: { $lt: value } })
+$lte – Less than or equal to
+db.collection_name.find({ key: { $lte: value } })
+$in – Matches any value in an array
+db.collection_name.find({ key: { $in: [value1, value2] } })
+$nin – Does not match any value in an array
+db.collection_name.find({ key: { $nin: [value1, value2] } })
+
+
+Logical Operators
+$and – Matches all conditions
+db.collection_name.find({ $and: [{ key1: value1 }, { key2: value2 }] })
+$or – Matches at least one condition
+db.collection_name.find({ $or: [{ key1: value1 }, { key2: value2 }] })
+$not – Matches negation of a condition
+db.collection_name.find({ key: { $not: { $eq: value } } })
+$nor – Matches none of the conditions
+db.collection_name.find({ $nor: [{ key1: value1 }, { key2: value2 }] })
+Array Operators
+$all – Matches all elements in an array
+db.collection_name.find({ key: { $all: [value1, value2] } })
+$size – Matches arrays of a specific size
+db.collection_name.find({ key: { $size: 3 } })
+$elemMatch – Matches documents where at least one array element matches
+db.collection_name.find({ key: { $elemMatch: { field: value } } })
+________________
+
+
+4. Indexing
+Create an index
+ db.collection_name.createIndex({ field: 1 })  // 1 = Ascending, -1 = Descending
+List all indexes
+ db.collection_name.getIndexes()
+Drop an index
+ db.collection_name.dropIndex("index_name")
+________________
+
+
+5. Aggregation
+Basic Aggregation Pipeline
+ db.collection_name.aggregate([
+  { $match: { key: value } },       // Filter documents
+  { $group: { _id: "$field", count: { $sum: 1 } } },  // Group and count
+  { $sort: { count: -1 } }          // Sort results
+])
+            *             * Common Aggregation Operators
+            * $sum – Sums values
+            * $avg – Calculates average
+            * $min – Finds minimum value
+            * $max – Finds maximum value
+            * $push – Adds values to an array
+            * $first – Gets first document
+            * $last – Gets last document
+________________
+
+
+6. Transactions
+Start a transaction
+ session = db.getMongo().startSession()
+session.startTransaction()
+Commit a transaction
+ session.commitTransaction()
+session.endSession()
+Abort a transaction
+ session.abortTransaction()
+session.endSession()
+________________
+
+
+7. User Management
+Create a user
+ db.createUser({
+  user: "username",
+  pwd: "password",
+  roles: [{ role: "readWrite", db: "database_name" }]
+})
+Show users
+ db.getUsers()
+Drop a user
+ db.dropUser("username")
+________________
+
+
+8. Backup and Restore
+Backup a database
+ mongodump --db database_name --out /path/to/backup/
+Restore a database
+ mongorestore --db database_name /path/to/backup/database_name/
+9. MongoDB Shell Shortcuts
+Pretty print output
+ db.collection_name.find().pretty()
+Count documents
+ db.collection_name.countDocuments()
+Check connection status
+ db.runCommand({ connectionStatus: 1 })
+
+
+Redis Overview and Commands
+Comprehensive Overview of Redis
+What is Redis?
+Redis (Remote Dictionary Server) is an open-source, in-memory key-value data store that can be used as a database, cache, and message broker. It is known for its high performance, simplicity, and support for a variety of data structures.
+Redis is a powerful, fast, and flexible tool used for caching, messaging, analytics, and more. It supports various data structures, transactions, persistence, and high availability, making it widely used in real-time applications.
+Key Features
+            * In-Memory Storage: Redis primarily stores data in memory, making it extremely fast.
+            * Persistence Options: It provides snapshotting (RDB) and append-only file (AOF) persistence.
+            * Replication: Supports master-slave replication for high availability.
+            * Data Structures: Supports strings, lists, sets, sorted sets, hashes, bitmaps, hyperloglogs, and streams.
+            * Atomic Operations: All Redis commands are atomic.
+            * Pub/Sub Messaging System: Supports publish/subscribe messaging.
+            * Lua Scripting: Allows execution of scripts for complex operations.
+            * Transactions: Supports transactions through the MULTI and EXEC commands.
+________________
+
+
+Common Redis Data Structures & Commands
+1. Strings
+Strings are the simplest data type in Redis.
+Commands
+SET key value       # Set a key with a value
+GET key            # Retrieve the value of a key
+DEL key            # Delete a key
+APPEND key value   # Append value to existing key
+INCR key          # Increment the value (assumes value is an integer)
+INCRBY key 10     # Increment by a specified amount
+DECR key          # Decrement the value
+MSET key1 val1 key2 val2  # Set multiple keys
+MGET key1 key2    # Get multiple values
+________________
+
+
+2. Lists
+Redis lists are ordered collections of strings.
+Commands
+LPUSH mylist "value1"    # Push to the left of the list
+RPUSH mylist "value2"    # Push to the right
+LPOP mylist             # Remove from the left
+RPOP mylist             # Remove from the right
+LRANGE mylist 0 -1      # Retrieve all elements
+LLEN mylist            # Get list length
+LINSERT mylist BEFORE "value1" "new_value" # Insert before an element
+________________
+
+
+3. Sets
+Sets are unordered collections of unique elements.
+Commands
+SADD myset "value1" "value2"  # Add elements
+SMEMBERS myset               # Retrieve all elements
+SREM myset "value1"          # Remove an element
+SISMEMBER myset "value1"     # Check membership
+SCARD myset                  # Get set size
+SDIFF set1 set2              # Difference between sets
+SINTER set1 set2             # Intersection
+SUNION set1 set2             # Union of sets
+________________
+
+
+4. Hashes
+Hashes are key-value stores within a key.
+Commands
+HSET myhash field1 "value1" field2 "value2"  # Set multiple fields
+HGET myhash field1                           # Get a field value
+HDEL myhash field1                           # Delete a field
+HGETALL myhash                               # Retrieve all fields & values
+HEXISTS myhash field1                        # Check if a field exists
+HINCRBY myhash field1 5                      # Increment a field
+________________
+
+
+5. Sorted Sets
+Sorted sets are like sets but with scores to order elements.
+Commands
+ZADD myzset 1 "value1" 2 "value2"   # Add with scores
+ZRANGE myzset 0 -1                  # Retrieve ordered elements
+ZRANGEBYSCORE myzset 1 2            # Get elements by score range
+ZREM myzset "value1"                # Remove element
+ZCARD myzset                        # Get sorted set size
+ZSCORE myzset "value1"              # Get score of an element
+________________
+
+
+6. Bitmaps
+Bitmaps allow bitwise operations on strings.
+Commands
+SETBIT key 100 1  # Set bit at position 100
+GETBIT key 100    # Get bit at position 100
+BITCOUNT key      # Count bits set to 1
+________________
+
+
+7. HyperLogLogs
+HyperLogLogs provide approximations of unique counts.
+Commands
+PFADD mylog "value1" "value2"  # Add elements
+PFCOUNT mylog                  # Count unique elements
+________________
+
+
+8. Streams
+Streams support time-series data.
+Commands
+XADD mystream * sensor_id 1 temperature 20.5  # Add entry
+XRANGE mystream - +                          # Retrieve all entries
+XDEL mystream 1609459200000-0                # Delete an entry
+________________
+
+
+Additional Features
+Transactions
+Transactions allow executing multiple commands as a single atomic operation.
+Commands
+MULTI          # Begin transaction
+SET key value  # Queue command
+INCR key       # Queue command
+EXEC           # Execute queued commands
+DISCARD        # Cancel transaction
+________________
+
+
+Pub/Sub Messaging
+Redis can act as a message broker.
+Commands
+PUBLISH mychannel "Hello World"  # Publish a message
+SUBSCRIBE mychannel              # Subscribe to a channel
+________________
+
+
+Persistence Options
+            1. RDB (Redis Database Backup): Snapshots of the dataset.
+            2. AOF (Append Only File): Logs every write operation for durability.
+Commands
+SAVE    # Manual snapshot
+BGSAVE  # Snapshot in the background
+FLUSHDB  # Delete all keys in the current database
+FLUSHALL # Delete all keys in all databases
+________________
+
+
+Replication & High Availability
+            * Master-Slave Replication: Syncs a slave with a master.
+            * Sentinel: Provides automated failover.
+            * Cluster Mode: Enables horizontal scaling.
+Commands
+SLAVEOF master_host master_port  # Make a Redis instance a slave
+INFO replication                 # Get replication details
+
+
+SQL Overview and Documentation
+Comprehensive Overview of SQL for Querying
+What is SQL?
+SQL (Structured Query Language) is the standard language for interacting with relational databases. It is used for querying, inserting, updating, and managing data.
+Types of SQL Statements
+            1. Data Query Language (DQL) – Used for querying data (SELECT).
+            2. Data Definition Language (DDL) – Defines database structure (CREATE, ALTER, DROP).
+            3. Data Manipulation Language (DML) – Modifies data (INSERT, UPDATE, DELETE).
+            4. Data Control Language (DCL) – Controls access (GRANT, REVOKE).
+            5. Transaction Control Language (TCL) – Manages transactions (COMMIT, ROLLBACK).
+________________
+
+
+1. Querying Data with SELECT (DQL)
+The SELECT statement is used to retrieve data from a database.
+Basic SELECT
+SELECT column1, column2 FROM table_name;
+
+
+            * Retrieves specific columns.
+            * Use * to select all columns.
+SELECT * FROM employees;
+
+
+Using WHERE Clause
+Filters rows based on conditions.
+SELECT * FROM employees WHERE department = 'Finance';
+
+
+Operators:
+            * = (equal)
+            * !=, <> (not equal)
+            * > (greater than), < (less than)
+            * >=, <=
+            * IN, BETWEEN, LIKE, IS NULL
+SELECT * FROM employees WHERE salary BETWEEN 50000 AND 100000;
+SELECT * FROM customers WHERE last_name LIKE 'S%';
+SELECT * FROM orders WHERE status IN ('Pending', 'Shipped');
+SELECT * FROM employees WHERE manager_id IS NULL;
+
+
+________________
+
+
+2. Sorting & Limiting Results
+Sorting with ORDER BY
+SELECT * FROM employees ORDER BY salary DESC;
+
+
+            * Default is ascending (ASC), descending (DESC).
+Limiting Results with LIMIT and OFFSET
+SELECT * FROM customers ORDER BY id LIMIT 5;
+SELECT * FROM customers ORDER BY id LIMIT 5 OFFSET 10;
+
+
+            * OFFSET skips rows.
+________________
+
+
+3. Aggregate Functions & Grouping
+Aggregate functions perform calculations on multiple rows.
+Common Aggregate Functions
+Function
+	Description
+	COUNT()
+	Counts rows
+	SUM()
+	Adds values
+	AVG()
+	Calculates average
+	MIN()
+	Finds minimum value
+	MAX()
+	Finds maximum value
+	SELECT COUNT(*) FROM employees WHERE department = 'IT';
+SELECT AVG(salary) FROM employees;
+SELECT department, SUM(salary) FROM employees GROUP BY department;
+
+
+Filtering Groups with HAVING
+SELECT department, AVG(salary)
+FROM employees
+GROUP BY department
+HAVING AVG(salary) > 70000;
+
+
+            * HAVING filters after GROUP BY (unlike WHERE which filters before).
+________________
+
+
+4. Joins (Combining Tables)
+SQL joins allow querying data from multiple tables.
+Types of Joins
+            1. INNER JOIN – Matches rows with common values.
+            2. LEFT JOIN – Returns all left table rows, with matched right table rows.
+            3. RIGHT JOIN – Returns all right table rows, with matched left table rows.
+            4. FULL JOIN – Returns all rows from both tables.
+            5. CROSS JOIN – Returns all possible combinations.
+            6. SELF JOIN – Joins a table to itself.
+Example Joins
+INNER JOIN
+SELECT employees.name, departments.department_name
+FROM employees
+INNER JOIN departments ON employees.department_id = departments.id;
+
+
+LEFT JOIN
+SELECT customers.name, orders.order_date
+FROM customers
+LEFT JOIN orders ON customers.id = orders.customer_id;
+
+
+FULL JOIN
+SELECT a.name AS employee_name, b.name AS manager_name
+FROM employees a
+FULL JOIN employees b ON a.manager_id = b.id;
+
+
+________________
+
+
+5. Subqueries
+A subquery is a query inside another query.
+SELECT name FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+
+
+            * Correlated Subquery: Uses outer query values.
+SELECT name FROM employees e1
+WHERE salary > (SELECT AVG(salary) FROM employees e2 WHERE e1.department_id = e2.department_id);
+
+
+________________
+
+
+6. Common Table Expressions (CTEs)
+A CTE is a temporary result set for readability and reuse.
+WITH DepartmentSalary AS (
+    SELECT department, AVG(salary) AS avg_salary
+    FROM employees
+    GROUP BY department
+)
+SELECT * FROM DepartmentSalary WHERE avg_salary > 60000;
+
+
+________________
+
+
+7. Window Functions
+Used for advanced analytics over subsets of rows.
+Examples
+SELECT name, salary, 
+       RANK() OVER (ORDER BY salary DESC) AS rank
+FROM employees;
+
+
+            * RANK(): Ranks with gaps.
+            * DENSE_RANK(): Ranks without gaps.
+            * ROW_NUMBER(): Unique ranks.
+________________
+
+
+8. Updating & Deleting Data (DML)
+Updating Data
+UPDATE employees SET salary = salary * 1.1 WHERE department = 'IT';
+
+
+Deleting Data
+DELETE FROM employees WHERE department = 'HR';
+
+
+            * Caution: Omitting WHERE deletes all rows.
+________________
+
+
+9. Transactions (TCL)
+Ensures data integrity.
+START TRANSACTION;
+UPDATE accounts SET balance = balance - 500 WHERE id = 1;
+UPDATE accounts SET balance = balance + 500 WHERE id = 2;
+COMMIT;  -- Saves changes
+ROLLBACK;  -- Reverts changes
+
+
+________________
+
+
+10. Indexing for Performance
+Indexes speed up queries.
+CREATE INDEX idx_employees_salary ON employees(salary);
+
+
+            * Clustered Index: Dictates row storage.
+            * Non-Clustered Index: Only improves lookup speed.
+________________
+
+
+Conclusion
+SQL is a powerful querying language with vast capabilities, including filtering, joining, aggregating, and optimizing data. Mastering SQL enhances your ability to extract meaningful insights from databases efficiently.
