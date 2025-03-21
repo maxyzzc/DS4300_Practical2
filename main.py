@@ -5,6 +5,10 @@ import numpy as np
 import ollama
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+import chromadb
+import faiss
+import pandas as pd
+import time
 
 # CONNECT TO REDIS
 redis_client = redis.Redis(host="localhost",
@@ -12,18 +16,31 @@ redis_client = redis.Redis(host="localhost",
                            password=None,
                            decode_responses=True)
 
-# Load Embedding Model (optimized for Llama3)
-sentence_transformer = "sentence-transformers/all-MiniLM-L6-v2"
-sentence_transformer = "sentence-transformers/all-mpnet-base-v2"
-sentence_transformer = "sentence-transformers/all-MiniLM-L6-v2"
+chroma_client = chromadb.PersistentClient(path="chroma_db")
 
-embedding_model = SentenceTransformer(sentence_transformer)
+faiss_text = {}
+faiss_index = faiss.IndexFlatL2(384)
 
-def reset_database():
+def reset_redis_database():
     """Flush entire Redis database, removing all stored keys."""
     redis_client.flushdb()
     print("Redis database has been reset.")
 
+def reset_chroma_database():
+    """Flush entire Chroma database, removing all stored collections."""
+    collections = chroma_client.list_collections()
+    
+    for collection in collections:
+        chroma_client.delete_collection(collection)
+    
+    print("Chroma database has been reset.")  
+
+def reset_faiss_database():
+    """Resets the FAISS database by creating a new index and clearing the text store."""
+    global faiss_index, faiss_text
+    faiss_index = faiss.IndexFlatL2(384)
+    faiss_text.clear()
+    print("FAISS database has been reset.")
 
 # Read and Preprocess the Text File
 def read_and_preprocess(file_path):
@@ -36,7 +53,6 @@ def read_and_preprocess(file_path):
     text = re.sub(r"\s+", " ", text)
 
     return text
-
 
 def chunk_text(text, chunk_size=250, overlap=50):
     """Splits text into overlapping chunks"""
@@ -56,7 +72,7 @@ def chunk_text(text, chunk_size=250, overlap=50):
     return chunks
 
 
-def generate_embeddings(chunks):
+def generate_embeddings(chunks, embedding_model=SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")):
     """Generates vector embeddings for each text chunk using the embedding model."""
     return embedding_model.encode(chunks).tolist()
 
@@ -77,43 +93,89 @@ def store_in_redis(chunks, embeddings):
     pipe.execute()
     print(f"Stored {len(chunks)} chunks in Redis.")
 
+def store_in_chroma(chunks, embeddings):
+    """Stores text chunks and corresponding vector embeddings in ChromaDB."""
+    collection_name = "text_chunks"
+    
+    # Create or get existing collection
+    collection = chroma_client.get_or_create_collection(name=collection_name)
 
-def retrieve_relevant_chunks(query, top_k=3):
-    """Retrieves the top-k most relevant chunks from Redis based on query embedding similarity."""
-    # Generate embedding for query
+    # Prepare documents to insert
+    documents = [
+        {
+            "id": f"doc_1_chunk_{i}",
+            "metadata": {"text": chunk},  # Store text as metadata
+            "embedding": embedding
+        }
+        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+    ]
+
+    # Insert data into ChromaDB
+    collection.add(
+        ids=[doc["id"] for doc in documents],
+        embeddings=[doc["embedding"] for doc in documents],
+        metadatas=[doc["metadata"] for doc in documents]
+    )
+
+    print(f"Stored {len(chunks)} chunks in ChromaDB.")    
+
+def store_in_faiss(chunks, embeddings):
+    """Stores text chunks and corresponding vector embeddings in FAISS."""
+    global faiss_text
+
+    embeddings_np = np.array(embeddings).astype("float32")  
+    start_id = faiss_index.ntotal  
+    end_id = start_id + len(embeddings)
+
+    # Add embeddings to FAISS index
+    faiss_index.add(embeddings_np)
+
+    # Store text chunks in faiss_text using FAISS index IDs
+    for i, chunk in enumerate(chunks):
+        faiss_text[start_id + i] = chunk
+
+    print(f"Stored {len(chunks)} chunks in FAISS.")
+
+
+def retrieve_relevant_chunks(query, embedding_model, db="redis", top_k=3):
+    """Retrieves the top-k most relevant chunks based on query embedding similarity."""
     query_embedding = embedding_model.encode([query])[0]
+    
+    if db == "redis":
+        chunk_keys = redis_client.keys("doc_1_chunk_*")
+        if not chunk_keys:
+            print("No data found in Redis.")
+            return []
+        similarities = []
+        for chunk_key in chunk_keys:
+            stored_data = redis_client.hgetall(chunk_key)
+            stored_vector = json.loads(stored_data["vector"])
+            similarity = np.dot(query_embedding, stored_vector) / (
+                np.linalg.norm(query_embedding) * np.linalg.norm(stored_vector)
+            )
+            similarities.append((chunk_key, stored_data["text"], similarity))
+        similarities.sort(key=lambda x: x[2], reverse=True)
+        return [chunk[1] for chunk in similarities[:top_k]]
+    
+    elif db == "chroma":
+        collection = chroma_client.get_or_create_collection(name="text_chunks")
+        results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
+        return [metadata["text"] for metadata in results["metadatas"][0]]
+    
+    elif db == "faiss":
+        distances, indices = faiss_index.search(np.array([query_embedding]).astype("float32"), top_k)
+        return [faiss_text[idx] for idx in indices[0] if idx in faiss_text]
+    
+    else:
+        raise ValueError("Invalid database option. Choose from 'redis', 'chroma', or 'faiss'.")
 
-    # Fetch all stored chunk keys
-    chunk_keys = redis_client.keys("doc_1_chunk_*")
-
-    if not chunk_keys:
-        print("No data found in Redis.")
-        return []
-
-    similarities = []
-
-    # Compute similarity between query embedding and stored embeddings
-    for chunk_key in chunk_keys:
-        stored_data = redis_client.hgetall(chunk_key)
-        stored_vector = json.loads(stored_data["vector"])  # Convert back to list
-
-        # Compute cosine similarity
-        similarity = np.dot(query_embedding, stored_vector) / (
-                    np.linalg.norm(query_embedding) * np.linalg.norm(stored_vector))
-        similarities.append((chunk_key, stored_data["text"], similarity))
-
-    # Sort by highest similarity and get top_k chunks
-    similarities.sort(key=lambda x: x[2], reverse=True)
-    top_chunks = [chunk[1] for chunk in similarities[:top_k]]
-
-    return top_chunks
 
 
-def generate_llama_response(query, top_k=3):
+def generate_llama_response(query, embedding_model, db, top_k=3):
     """Retrieves relevant chunks from Redis and generates a response using Llama3."""
 
     # Retrieve relevant text chunks
-    relevant_chunks = retrieve_relevant_chunks(query, top_k)
+    relevant_chunks = retrieve_relevant_chunks(query, embedding_model, db, top_k)
 
     if not relevant_chunks:
         return "I couldn't find relevant information in the database."
@@ -127,7 +189,7 @@ def generate_llama_response(query, top_k=3):
 
     return response["message"]["content"]
 
-def run_llm(k=3):
+def run_llm(k=3, db="redis", embedding_model=SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")):
     print(f"\n{75 * '-'}")
     while True:
         query = input("Input query here ('quit' to exit): ")
@@ -136,31 +198,125 @@ def run_llm(k=3):
         if query == 'quit':
             break
 
-        response = generate_llama_response(query, top_k=k)
+        response = generate_llama_response(query, embedding_model, db, top_k=k)
         print("\nLlama3's Response:\n", response)
         print(f"\n{75*'-'}")
 
+def test_llm(embedding_model, questions, db, k=3):
+    responses = []
+    for q in questions:
+        responses.append(generate_llama_response(q, embedding_model, db, k))
+    return responses
+
 def main():
 
-    # Parameters
-    k = 5
-    chunk_size = 200
-    overlap = 50
+    version = input("Enter 0 to run model. Enter 1 to test different model versions.")
 
-    # Read and preprocess the text
-    text = read_and_preprocess("data/document_1.txt")
+    if version == "1":
 
-    # Split text into chunks and embedd
-    chunks = chunk_text(text, chunk_size=chunk_size, overlap=overlap)
-    embeddings = generate_embeddings(chunks)
+        # Initialize questions to ask each model
+        questions = [
+            "What is the purpose of the SELECT statement in SQL?",
+            "Define a database record and how it relates to a table.",
+            "Explain the difference between a relational database and a NoSQL database.",
+            "What are the ACID properties in database transactions?",
+            "Compare linear search and binary search in terms of efficiency.",
+            "What are the advantages and disadvantages of using linked list-based storage for database records?",
+            "What is an index in a relational database, and how does it improve search performance?",
+            "Explain the difference between row-oriented and column-oriented storage.",
+            "What is a materialized view, and how does it improve query performance?",
+            "How does query optimization enhance the efficiency of database operations?",
+            "What are the four main types of NoSQL databases, and what are they best suited for?",
+            "Explain the CAP theorem and how it applies to NoSQL databases.",
+            "How does Redis differ from a traditional relational database?",
+            "What is a graph database, and in what scenarios is it most useful?",
+            "Explain the difference between nodes and edges in a graph database.",
+            "What are some common algorithms used in graph databases?",
+            "Write a MongoDB query to find all users who are older than 30.",
+            "How do you perform an aggregation in MongoDB, and what are some common aggregation operations?",
+            "What is the purpose of the $match and $group stages in MongoDBs aggregation pipeline?",
+            "Write an SQL query to find the total number of employees in each department and sort the results in descending order."
+        ]
 
-    # Store the chunks and embeddings in Redis
-    reset_database()
-    store_in_redis(chunks, embeddings)
+        # Parameters
+        k = 5
+        chunk_sizes = [200, 500, 1000]
+        overlaps = [0, 50, 100]
+        sentence_transformers = [
+            "sentence-transformers/all-MiniLM-L6-v2",
+            "sentence-transformers/all-mpnet-base-v2"
+            "sentence-transformers/all-MiniLM-L6-v2"
+            ]
+        databases = ["redis", "chroma", "faiss"]
 
-    print("\nDocument has been processed and stored in Redis.")
+        # Read and preprocess the text
+        text = read_and_preprocess("document_1.txt")
 
-    run_llm(k=k)
+        df = pd.DataFrame(columns = ['time', 'chunk_size', 'overlaps', 'sentence_transformer', 'db', 'q1', 'q2', 'q3', 'q4', 'q5',
+                                     'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20'])
+
+        all_responses = []
+
+        # Split text into chunks and embedd
+        for c in chunk_sizes:
+            for o in overlaps:
+                chunks = chunk_text(text, chunk_size=c, overlap=o)
+                for s in sentence_transformers:
+                    embedding_model = SentenceTransformer(s)
+                    embeddings = generate_embeddings(chunks, embedding_model)
+
+                    for db in databases:
+                        if db == "redis":
+                            # Store the chunks and embeddings in Redis
+                            reset_redis_database()
+                            store_in_redis(chunks, embeddings)
+                        elif db == "chroma":
+                            reset_chroma_database()
+                            store_in_chroma(chunks, embeddings)
+                        elif db == "faiss":
+                            reset_faiss_database()
+                            store_in_faiss(chunks, embeddings)
+                            # Evaluate memory, speed of indexing, speed of querying
+
+                        print("\nDocument has been processed and stored in", db, ".")
+                    
+                        start_time = time.time()
+
+                        responses = test_llm(embedding_model, questions, db, k)
+                        responses.insert(0, time.time() - start_time)
+                        responses.insert(1, c)
+                        responses.insert(2, o)
+                        responses.insert(3, s)
+                        responses.insert(4, db)
+
+                        all_responses.append(responses)
+
+        df = pd.DataFrame(all_responses, columns = ['time', 'chunk_size', 'overlaps', 'sentence_transformer', 'db', 'q1',
+            'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20'])
+
+        df.to_csv("all_responses.csv")
+
+    else:
+        # Parameters
+        k = 5
+        chunk_size = 200
+        overlap = 50
+
+        # Read and preprocess the text
+        text = read_and_preprocess("document_1.txt")
+
+        # Split text into chunks and embedd
+        chunks = chunk_text(text, chunk_size=chunk_size, overlap=overlap)
+        embeddings = generate_embeddings(chunks)
+
+        # Store the chunks and embeddings in Redis
+        reset_faiss_database()
+        store_in_faiss(chunks, embeddings)
+
+        print("\nDocument has been processed and stored in Faiss.")
+
+        run_llm(k=k, db="faiss")
 
 if __name__ == "__main__":
     main()
+
