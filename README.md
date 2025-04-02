@@ -44,7 +44,7 @@ This file will be read, preprocessed, chunked, and embedded.
 From the root directory, run:
 
 ```bash
-python rag_llm.py
+python main.py
 ```
 
 You’ll be prompted with:
