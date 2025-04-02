@@ -2,3 +2,7 @@ redis
 numpy
 ollama
 sentence-transformers
+tqdm
+chromadb
+faiss-cpu
+pandas
