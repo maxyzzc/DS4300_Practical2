@@ -18,7 +18,6 @@ redis_client = redis.Redis(host="localhost",
                            decode_responses=True)
 
 chroma_client = chromadb.PersistentClient(path="chroma_db")
-
 faiss_text = {}
 faiss_index = faiss.IndexFlatL2(384)
 
@@ -231,7 +230,6 @@ def generate_llama_response(query, embedding_model, db, top_k=3, llm='llama3.2:3
     # Construct prompt with retrieved context
     context = "\n".join(relevant_chunks)
     prompt = f"Use the following lecture notes to answer the question:\n\n{context}\n\nQuestion: Answer shortly. {query}\nAnswer:"
-    print(prompt)
 
     # Query Ollama’s Llama3.2:3B model
     response = ollama.chat(model=llm, messages=[{"role": "user", "content": prompt}])
@@ -281,7 +279,6 @@ def main():
     if version == "1":
 
         # Initialize questions to ask each model
-
         questions = [
             "Describe the CAP theorem and how it applies to MongoDB.",
             "Describe how data is organized and indexed in a B+ tree.",
@@ -302,7 +299,7 @@ def main():
         llms = ['llama3.2:3b', 'gemma3:1b']
 
         # Read and preprocess the text
-        text = read_and_preprocess("document_1.txt")
+        text = read_and_preprocess("data/document_1.txt")
 
         df = pd.DataFrame(columns=['total_time', 'llm', 'db', 'sentence_transformer', 'chunk_size', 'overlaps',
                            'embedding_time', 'embedding_memory', 'db_indexing_time', 'db_memory', 
@@ -364,19 +361,21 @@ def main():
         overlap = 50
 
         # Read and preprocess the text
-        text = read_and_preprocess("document_1.txt")
+        text = read_and_preprocess("data/document_1.txt")
 
         # Split text into chunks and embedd
+        transformer = "sentence-transformers/all-MiniLM-L6-v2"
+        embedding_model = SentenceTransformer(transformer)
         chunks = chunk_text(text, chunk_size=chunk_size, overlap=overlap)
-        embeddings = generate_embeddings(chunks)[0]
+        embeddings = generate_embeddings(chunks, embedding_model=embedding_model)[0]
 
         # Store the chunks and embeddings in Chroma
-        reset_faiss_database("BAAI/bge-small-en-v1.5")
+        reset_faiss_database(transformer)
         memory = store_in_faiss(chunks, embeddings)
 
         # Running LLM
         llm = 'gemma3:1b'
-        run_llm(k=k, db="faiss", embedding_model=SentenceTransformer("BAAI/bge-small-en-v1.5"), llm=llm)
+        run_llm(k=k, db="faiss", embedding_model=embedding_model, llm=llm)
 
 if __name__ == "__main__":
     main()
